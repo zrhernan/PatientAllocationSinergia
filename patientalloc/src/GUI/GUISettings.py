@@ -21,7 +21,7 @@ class GUISettings():
         self.saveMode = "local"
         self.subjectCreationType = "BCI"
         self.savingProperties = {"folder": str(Path.home()) + "/data/", "xml_file_path": xml_file_path,
-                                 "xml_file_name": xml_file_name, "resources": str(Path.home()) + "/dev/fesapps/fesjson/resources/"}
+                                 "xml_file_name": xml_file_name, "resources": str(Path.home()) + "/dev/fescontrol/resources/"}
 
     def createSettingsFile(self):
         if not os.path.exists(os.path.dirname(self.settingsFile)):
