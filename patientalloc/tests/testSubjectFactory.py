@@ -48,7 +48,7 @@ class TestSubjectFactory(unittest.TestCase):
     def testGetMatchingSubjectId(self):
         self.database.getEntryGroup.side_effect = ['Sham', 'BCI']
         self.database.getEntryId = MagicMock(return_value='s03')
-        matching_subject_id = self.subjectFactory.getMatchingSubjectId()
+        matching_subject_id = self.subjectFactory.get_matching_subject_id()
         self.assertEqual(matching_subject_id, 's03')
         self.assertEqual(self.database.getEntryId.call_count, 1)
         self.entries.assert_called_once_with()

@@ -4,7 +4,7 @@ import getpass
 from appJar import appjar
 import patientalloc.src.Database.DatabaseError as DatabaseError
 import math
-
+import subprocess
 
 class DatabaseLoaderDisplay():
     def __init__(self, currentGui):
@@ -74,6 +74,46 @@ class DatabaseLoaderDisplay():
         for field in self.database.order:
             self.__create_field_frame__(field, field_index)
             field_index += 1
+        entry_index = self.__display_rejection__(entry_index, field_index)
+        field_index = self.__display_finish__(entry_index, field_index)
+        field_index += 2
+        entry_index += 2
+        self.app.addButton("Add Patient", self.__add_subject__,
+                           row=entry_index, column=0, colspan=math.floor(field_index / 2))
+        self.buttons_to_remove.append("Add Patient")
+        if self.gui.mode == 'admin':
+            self.app.addButton("Check Probabilities",
+                               self.__check_probability_groups__)
+            self.buttons_to_remove.append("Check Probabilities")
+        self.app.addButton("Save", self.__save_database__, row=entry_index, column=math.floor(
+            field_index / 2), colspan=math.floor(field_index / 2))
+        self.buttons_to_remove.append("Save")
+        self.app.setButtonBg("Save", "green")
+        self.app.addButton("Generate Playback files", self.__compute_playback__,
+                           row=entry_index+1, column=0, colspan=field_index)
+        self.app.stopFrame()
+        self.databaseDisplayed = True
+
+    def __display_finish__(self, entry_index, field_index):
+        field_index += 1
+        entry_index = 1
+        self.app.addLabel("Finish", "Finish", row=0, column=field_index)
+        self.labels_to_remove.append("Finish")
+        for entry in self.database.entries:
+            self.app.addNamedCheckBox(
+                "", "Finish_" + str(entry_index), row=entry_index, column=field_index)
+            self.checkboxes_to_remove.append("Finish_" + str(entry_index))
+            if entry_index in self.database.finished_entries:
+                self.app.setCheckBox("Finish_" + str(entry_index), True, False)
+            else:
+                self.app.setCheckBox(
+                    "Finish_" + str(entry_index), False, False)
+            self.app.setCheckBoxChangeFunction(
+                "Finish_" + str(entry_index), self.__set_entry_as_finished__)
+            entry_index += 1
+        return field_index
+
+    def __display_rejection__(self, entry_index, field_index):
         self.app.addLabel("Reject", "Reject", row=0, column=field_index)
         self.labels_to_remove.append("Reject")
         entry_index = 1
@@ -89,21 +129,7 @@ class DatabaseLoaderDisplay():
             self.app.setCheckBoxChangeFunction(
                 "Reject_" + str(entry_index), self.__reject_entry__)
             entry_index = entry_index + 1
-        field_index += 2
-        entry_index += 2
-        self.app.addButton("Add Patient", self.__add_subject__,
-                           row=entry_index, column=0, colspan=math.floor(field_index / 2))
-        self.buttons_to_remove.append("Add Patient")
-        if self.gui.mode == 'admin':
-            self.app.addButton("Check Probabilities",
-                               self.__check_probability_groups__)
-            self.buttons_to_remove.append("Check Probabilities")
-        self.app.addButton("Save", self.__save_database__, row=entry_index, column=math.floor(
-            field_index / 2), colspan=math.floor(field_index / 2))
-        self.buttons_to_remove.append("Save")
-        self.app.setButtonBg("Save", "green")
-        self.app.stopFrame()
-        self.databaseDisplayed = True
+        return entry_index
 
     def __reject_entry__(self, entry):
         entry_index = int(entry[7:len(entry)])
@@ -118,6 +144,17 @@ class DatabaseLoaderDisplay():
                         "PValue_" + field, str(round(self.database.getPValue(field), 2)))
                 except DatabaseError.CannotComputeTTestOnField:
                     self.app.setLabel("PValue_" + field, "")
+
+    def __set_entry_as_finished__(self, entry):
+        entry_index = int(entry[7:len(entry)])
+        if entry_index in self.database.finished_entries:
+            self.database.setEntryAsUnFinished(entry_index)
+        else:
+            self.database.setEntryAsFinished(entry_index)
+
+    def __compute_playback__(self):
+        savemat('/home/cnbi/dev/shambcifesdata/Code/rejectedEntries.mat', self.database.rejected_entries)
+        subprocess('./home/cnbi/dev/shambcifesdata/Code/computeSham')
 
     def __create_field_frame__(self, field, field_index):
         if self.gui.mode == 'admin' or field != 'Group':

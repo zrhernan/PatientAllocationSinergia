@@ -22,6 +22,7 @@ class Database:
         self.order = []
         self.limited_values = []
         self.rejected_entries = []
+        self.finished_entries = []
         random.seed(datetime.now())
 
     def createCopy(self):
@@ -36,6 +37,7 @@ class Database:
         database.order = self.order.copy()
         database.limited_alues = self.limited_values.copy()
         database.rejected_entries = self.rejected_entries.copy()
+        database.finished_entries = self.finished_entries.copy()
         database.group_counter = self.group_counter.copy()
         return database
 
@@ -59,7 +61,8 @@ class Database:
                         'order': self.order,
                         'fields': dict(),
                         'groups': self.groups,
-                        'rejectedEntries': self.rejected_entries}
+                        'rejectedEntries': self.rejected_entries,
+                        'finishedEntries': self.finished_entries}
             for field in self.fields:
                 document['fields'][field] = dict()
                 document['fields'][field]['ttest'] = self.getTtestFromField(
@@ -101,6 +104,8 @@ class Database:
                     db_info["fields"][field]["limitedValues"])
             if "rejectedEntries" in db_info:
                 self.rejected_entries = db_info["rejectedEntries"]
+            if "finishedEntries" in db_info:
+                self.finished_entries = db_info["finishedEntries"]
             self.groups = db_info['groups']
             self.order = db_info['order']
             for group in self.groups:
@@ -124,6 +129,9 @@ class Database:
         if index > len(self.entries):
             raise DatabaseError.EntryOutOfRange(index)
         return self.entries[index]["SubjectID"]
+
+    def get_rejected_entries(self):
+        return [entry for entry in self.entries]
 
     def getTtestFromField(self, field):
         return self.ttest[self.fields.index(field)]
@@ -281,3 +289,9 @@ class Database:
 
     def unrejectEntry(self, index):
         self.rejected_entries.remove(index)
+
+    def setEntryAsFinished(self, index):
+        self.finished_entries.append(index)
+
+    def setEntryAsUnFinished(self, index):
+        self.finished_entries.remove(index)
