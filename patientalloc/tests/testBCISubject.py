@@ -18,7 +18,7 @@ class TestBCISubject(unittest.TestCase):
         xml_file_path, _ = os.path.split(os.path.abspath(__file__))
         xml_file_path = xml_file_path + "/database/"
         xml_file_name = "mi_stroke_prot.xml"
-        self.savingProperties = {"folder": str(Path.home()) + "/data/test",
+        self.savingProperties = {"folder": str(Path.home()) + "/data/test/",
                                  "xml_file_path": xml_file_path, "xml_file_name": xml_file_name, "resources": xml_file_path + "resources/"}
         self.dataPath = self.savingProperties["folder"]
         self.subjectPath = self.dataPath + "/" + self.properties["SubjectID"]
