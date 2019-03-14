@@ -164,7 +164,7 @@ class DatabaseLoaderDisplay():
         for index in self.database.finished_entries:
             finished_subject_ids.append(self.database.getEntryId(index-1))
         savemat(file_name, {'finished_entries': finished_subject_ids})
-        subprocess.call('computeSham', shell=True)
+        subprocess.call('gnome-terminal ---tab -e "bash -c \'computeSham\'"', shell=True)
 
     def __create_field_frame__(self, field, field_index):
         if self.gui.mode == 'admin' or field != 'Group':
