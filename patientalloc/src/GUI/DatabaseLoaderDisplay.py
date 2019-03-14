@@ -5,6 +5,8 @@ from appJar import appjar
 import patientalloc.src.Database.DatabaseError as DatabaseError
 import math
 import subprocess
+from scipy.io import savemat
+import os
 
 class DatabaseLoaderDisplay():
     def __init__(self, currentGui):
@@ -91,6 +93,7 @@ class DatabaseLoaderDisplay():
         self.app.setButtonBg("Save", "green")
         self.app.addButton("Generate Playback files", self.__compute_playback__,
                            row=entry_index+1, column=0, colspan=field_index)
+        self.buttons_to_remove.append("Generate Playback files")
         self.app.stopFrame()
         self.databaseDisplayed = True
 
@@ -153,8 +156,15 @@ class DatabaseLoaderDisplay():
             self.database.setEntryAsFinished(entry_index)
 
     def __compute_playback__(self):
-        savemat('/home/cnbi/dev/shambcifesdata/Code/rejectedEntries.mat', self.database.rejected_entries)
-        subprocess('./home/cnbi/dev/shambcifesdata/Code/computeSham')
+        temp_path = "/tmp/sinergia"
+        if not os.path.isdir(temp_path):
+            os.mkdir(temp_path)
+        file_name = temp_path + '/finishedEntries.mat'
+        finished_subject_ids = [];
+        for index in self.database.finished_entries:
+            finished_subject_ids.append(self.database.getEntryId(index-1))
+        savemat(file_name, {'finished_entries': finished_subject_ids})
+        subprocess.call('computeSham', shell=True)
 
     def __create_field_frame__(self, field, field_index):
         if self.gui.mode == 'admin' or field != 'Group':
