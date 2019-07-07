@@ -35,7 +35,7 @@ class Database:
         database.groups = self.groups.copy()
         database.entries = self.entries.copy()
         database.order = self.order.copy()
-        database.limited_alues = self.limited_values.copy()
+        database.limited_values = self.limited_values.copy()
         database.rejected_entries = self.rejected_entries.copy()
         database.finished_entries = self.finished_entries.copy()
         database.group_counter = self.group_counter.copy()
@@ -247,6 +247,7 @@ class Database:
         productPValue = 1
         for field in database.fields:
             try:
+
                 pvalue = database.getPValue(field)
                 if math.isnan(pvalue):
                     pvalue = 1
