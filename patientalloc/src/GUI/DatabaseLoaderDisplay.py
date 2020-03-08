@@ -57,10 +57,13 @@ class DatabaseLoaderDisplay():
     def __display_database__(self):
         self.app.setFont(size=14)
         field_index = 0
+        
         self.app.setStretch("column")
         self.app.startFrame("DatabaseDisplay", row=0, colspan=5)
+        self.app.startScrollPane("DabaseScroll",colspan=8)
         self.app.addLabel("Indices", "Indices", row=0, column=field_index)
         self.labels_to_remove.append("Indices")
+        
         entry_index = 1
         for _ in self.database.entries:
             self.app.addLabel("Indices_" + str(entry_index),
@@ -76,10 +79,12 @@ class DatabaseLoaderDisplay():
         for field in self.database.order:
             self.__create_field_frame__(field, field_index)
             field_index += 1
+        
         entry_index = self.__display_rejection__(entry_index, field_index)
         field_index = self.__display_finish__(entry_index, field_index)
         field_index += 2
         entry_index += 2
+        self.app.stopScrollPane()
         self.app.addButton("Add Patient", self.__add_subject__,
                            row=entry_index, column=0, colspan=math.floor(field_index / 2))
         self.buttons_to_remove.append("Add Patient")
@@ -95,6 +100,7 @@ class DatabaseLoaderDisplay():
                            row=entry_index+1, column=0, colspan=field_index)
         self.buttons_to_remove.append("Generate Playback files")
         self.app.stopFrame()
+        
         self.databaseDisplayed = True
 
     def __display_finish__(self, entry_index, field_index):
