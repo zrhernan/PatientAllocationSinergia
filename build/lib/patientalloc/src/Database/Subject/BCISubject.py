@@ -48,11 +48,10 @@ class BCISubject(Subject):
         tree.write(xmlFile)
 
     def create_resources(self):
-
         resourcesPath = self.__get_subject_path__() + "/resources"
         if not os.path.isdir(resourcesPath):
             os.makedirs(resourcesPath)
-        files = {"authorized": "AuthorizedMovements.json", "flexion": "flexion.json", "extension": "extension.json",
+        files = {"authorized": "AuthorizedMovements.json", "flexion": "flexion.json", "reaching": "extension.json",
                  "lowstimSingle": "lowStimSingle.json", "lowstimDouble": "lowStimDouble.json", "reset": "reset.json"}
         for file in files:
             pathToFile = resourcesPath + "/" + files[file]

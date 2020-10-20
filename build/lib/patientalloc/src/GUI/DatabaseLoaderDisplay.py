@@ -46,7 +46,7 @@ class DatabaseLoaderDisplay():
             if self.database is not None:
                 self.loaded = True
                 self.subject_factory = patientalloc.SubjectFactory(
-                    self.database, self.gui.settings, self.gui)
+                    self.database, self.gui.settings)
                 self.gui.enableSaveMenu()
         except DatabaseError.DatabaseError as error:
             print("==============================================")
@@ -60,7 +60,7 @@ class DatabaseLoaderDisplay():
         
         self.app.setStretch("column")
         self.app.startFrame("DatabaseDisplay", row=0, colspan=5)
-        self.app.startScrollPane("DatabaseScroll", colspan=8)
+        self.app.startScrollPane("DabaseScroll",colspan=8)
         self.app.addLabel("Indices", "Indices", row=0, column=field_index)
         self.labels_to_remove.append("Indices")
         
@@ -215,7 +215,7 @@ class DatabaseLoaderDisplay():
         subject.create()
         self.removeFrame()
         self.database.addEntryWithGroup(subject_properties)
-        print("New Entry ID: " + subject_properties["SubjectID"])
+        print(subject_properties["SubjectID"])
         self.__display_database__()
 
     def __check_probability_groups__(self):

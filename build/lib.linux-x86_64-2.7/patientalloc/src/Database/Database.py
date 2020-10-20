@@ -11,48 +11,61 @@ from datetime import datetime
 
 class Database:
     def __init__(self):
-        self.fileName = ""
+        self.file_name = ""
         self.folder = ""
         self.fields = []
-        self.fieldTypes = []
+        self.field_types = []
         self.entries = []
         self.ttest = []
         self.groups = []
+        self.group_counter = dict()
         self.order = []
-        self.limitedValues = []
-        self.rejectedEntries = []
+        self.limited_values = []
+        self.rejected_entries = []
+        self.finished_entries = []
+        self.previously_matched_entries = []
         random.seed(datetime.now())
 
     def createCopy(self):
         database = Database()
-        database.fileName = self.fileName
+        database.file_name = self.file_name
         database.folder = self.folder
         database.fields = self.fields.copy()
-        database.fieldTypes = self.fieldTypes.copy()
+        database.field_types = self.field_types.copy()
         database.ttest = self.ttest.copy()
         database.groups = self.groups.copy()
         database.entries = self.entries.copy()
         database.order = self.order.copy()
-        database.limitedValues = self.limitedValues.copy()
+        database.limited_values = self.limited_values.copy()
+        database.rejected_entries = self.rejected_entries.copy()
+        database.finished_entries = self.finished_entries.copy()
+        database.previously_matched_entries = self.previously_matched_entries.copy()
+        database.group_counter = self.group_counter.copy()
         return database
 
     def create(self):
-        fullpath = self.folder + "/" + self.fileName
+        fullpath = self.folder + "/" + self.file_name
         self.createWithFullPath(fullpath)
 
     def createWithFullPath(self, fullpath):
-        self.__setFileAndPathFromFullpath__(fullpath)
+        self.__set_file_and_path_from_full_path__(fullpath)
         if(not os.path.isdir(self.folder)):
             os.mkdir(self.folder)
-        self.__checkWritingPath__(fullpath)
+        self.__check_writing_path__(fullpath)
         if 'Group' not in self.fields:
             self.addField('Group', 0, 'Hidden')
-        with open(fullpath, 'w') as dbInfoFile:
-            document = {'databaseFile': self.fileName.replace('db', 'csv'),
+        self.__fill_info_database_file__(fullpath)
+        self.__fill_database_csv_file__()
+
+    def __fill_info_database_file__(self, path_to_info_db_file):
+        with open(path_to_info_db_file, 'w') as db_info_file:
+            document = {'databaseFile': self.file_name.replace('db', 'csv'),
                         'order': self.order,
                         'fields': dict(),
                         'groups': self.groups,
-                        'rejectedEntries': self.rejectedEntries}
+                        'rejectedEntries': self.rejected_entries,
+                        'finishedEntries': self.finished_entries,
+                        'previously_matched_entries': self.previously_matched_entries}
             for field in self.fields:
                 document['fields'][field] = dict()
                 document['fields'][field]['ttest'] = self.getTtestFromField(
@@ -61,47 +74,55 @@ class Database:
                     field)
                 document['fields'][field]['limitedValues'] = self.getLimitedValuesFromField(
                     field)
-            yaml.dump(document, dbInfoFile)
-        fullpath = self.folder + "/" + self.fileName.replace('db', 'csv')
+            yaml.dump(document, db_info_file)
+
+    def __fill_database_csv_file__(self):
+        fullpath = self.folder + "/" + self.file_name.replace('db', 'csv')
         with open(fullpath, 'w') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=self.fields)
             writer.writeheader()
             for entry in self.entries:
                 writer.writerow(entry)
 
-    def __setFileAndPathFromFullpath__(self, fullpath):
-        explodedPath = fullpath.split("/")
-        self.fileName = explodedPath[len(explodedPath) - 1]
-        explodedPath[len(explodedPath) - 1] = ""
-        self.folder = "/".join(explodedPath)
+    def __set_file_and_path_from_full_path__(self, fullpath):
+        exploded_path = fullpath.split("/")
+        self.file_name = exploded_path[len(exploded_path) - 1]
+        exploded_path[len(exploded_path) - 1] = ""
+        self.folder = "/".join(exploded_path)
 
-    def __checkWritingPath__(self, fullpath):
-        if(self.fileName == ""):
+    def __check_writing_path__(self, fullpath):
+        if(self.file_name == ""):
             raise DatabaseError.EmptyFileNameError()
 
     def loadWithFullPath(self, fullpath):
-        self.__setFileAndPathFromFullpath__(fullpath)
-        self.__checkReadingPath__(fullpath)
+        self.__set_file_and_path_from_full_path__(fullpath)
+        self.__check_reading_path__(fullpath)
         with open(fullpath, 'r') as dbFile:
-            dbInfo = yaml.safe_load(dbFile)
-            for field in dbInfo["fields"]:
+            db_info = yaml.safe_load(dbFile)
+            for field in db_info["fields"]:
                 self.fields.append(field)
-                self.ttest.append(dbInfo["fields"][field]["ttest"])
-                self.fieldTypes.append(dbInfo["fields"][field]["type"])
-                self.limitedValues.append(
-                    dbInfo["fields"][field]["limitedValues"])
-            if "rejectedEntries" in dbInfo:
-                self.rejectedEntries = dbInfo["rejectedEntries"]
-            self.groups = dbInfo['groups']
-            self.order = dbInfo['order']
-            fullpath = self.folder + "/" + dbInfo["databaseFile"]
+                self.ttest.append(db_info["fields"][field]["ttest"])
+                self.field_types.append(db_info["fields"][field]["type"])
+                self.limited_values.append(
+                    db_info["fields"][field]["limitedValues"])
+            if "rejectedEntries" in db_info:
+                self.rejected_entries = db_info["rejectedEntries"]
+            if "finishedEntries" in db_info:
+                self.finished_entries = db_info["finishedEntries"]
+            if "previously_matched_entries" in db_info:
+                self.previously_matched_entries = db_info["previously_matched_entries"]
+            self.groups = db_info['groups']
+            self.order = db_info['order']
+            for group in self.groups:
+                self.group_counter[group] = 0
+            fullpath = self.folder + "/" + db_info["databaseFile"]
             with open(fullpath, 'r') as csvfile:
                 reader = csv.DictReader(csvfile)
                 for row in reader:
                     self.addEntryWithGroup(row)
 
     def load(self):
-        fullpath = self.folder + "/" + self.fileName
+        fullpath = self.folder + "/" + self.file_name
         self.loadWithFullPath(fullpath)
 
     def getEntryGroup(self, index):
@@ -114,42 +135,45 @@ class Database:
             raise DatabaseError.EntryOutOfRange(index)
         return self.entries[index]["SubjectID"]
 
+    def get_rejected_entries(self):
+        return [entry for entry in self.entries]
+
     def getTtestFromField(self, field):
         return self.ttest[self.fields.index(field)]
 
     def getFieldTypeFromField(self, field):
-        return self.fieldTypes[self.fields.index(field)]
+        return self.field_types[self.fields.index(field)]
 
     def getLimitedValuesFromField(self, field):
-        return self.limitedValues[self.fields.index(field)]
+        return self.limited_values[self.fields.index(field)]
 
-    def __checkReadingPath__(self, fullpath):
-        if(self.fileName == ""):
+    def __check_reading_path__(self, fullpath):
+        if(self.file_name == ""):
             raise DatabaseError.EmptyFileNameError()
         if(not os.path.exists(fullpath)):
             raise DatabaseError.FileNotExistError(fullpath)
 
     def destroy(self):
-        fullpath = self.folder + "/" + self.fileName
+        fullpath = self.folder + "/" + self.file_name
         if(not os.path.exists(fullpath)):
             raise DatabaseError.FileNotExistError(fullpath)
         os.remove(fullpath)
-        fullpath = self.folder + "/" + self.fileName.replace('db', 'csv')
+        fullpath = self.folder + "/" + self.file_name.replace('db', 'csv')
         os.remove(fullpath)
 
-    def addField(self, field, ttest, fieldType, limitedValues=''):
+    def addField(self, field, ttest, field_type, limited_values=''):
         if(field == ""):
             raise DatabaseError.EmptyFieldError()
         self.fields.append(field)
         self.ttest.append(int(ttest))
-        self.fieldTypes.append(fieldType)
-        self.limitedValues.append(limitedValues)
+        self.field_types.append(field_type)
+        self.limited_values.append(limited_values)
         self.order.append(field)
 
-    def addFields(self, fields, ttests, fieldTypes):
+    def addFields(self, fields, ttests, field_types):
         fieldIndex = 0
         for field in fields:
-            self.addField(field, ttests[fieldIndex], fieldTypes[fieldIndex])
+            self.addField(field, ttests[fieldIndex], field_types[fieldIndex])
             fieldIndex += 1
 
     def addEntryWithGroup(self, entry):
@@ -158,25 +182,35 @@ class Database:
                 print(field)
                 raise DatabaseError.EntryWithUnknownFields
         self.entries.append(entry)
+        if entry["Group"] not in self.group_counter:
+            self.group_counter[entry["Group"]] = 0
+        self.group_counter[entry["Group"]] += 1
+
+    def setGroups(self, groups):
+        self.groups = groups
+        for group in self.groups:
+            self.group_counter[group] = 0
 
     def getPValue(self, field):
         if(field not in self.fields):
             print(field)
             raise DatabaseError.EntryWithUnknownFields
-        indexField = self.fields.index(field)
-        if self.ttest[indexField] is 0:
+        index_field = self.fields.index(field)
+        if self.ttest[index_field] is 0:
             raise DatabaseError.CannotComputeTTestOnField(field)
         groups = ({self.groups[0]: [], self.groups[1]: []})
         pvalue = 0
-        entryNumber = 0
+        entry_number = 0
+        # print(self.entries)
         for entry in self.entries:
-            if entryNumber + 1 not in self.rejectedEntries:
+            if entry_number + 1 not in self.rejected_entries:
                 if self.getFieldTypeFromField(field) == "List":
                     groups[entry["Group"]].append(
                         self.getLimitedValuesFromField(field).index(entry[field]))
                 elif self.getFieldTypeFromField(field) == "Number":
                     groups[entry["Group"]].append(int(float(entry[field])))
-            entryNumber = entryNumber + 1
+            entry_number = entry_number + 1
+        # print(groups)
         if self.getFieldTypeFromField(field) == "List":
             obs = [groups[self.groups[0]].count(
                 0), groups[self.groups[0]].count(1)]
@@ -188,48 +222,59 @@ class Database:
                 groups[self.groups[0]], groups[self.groups[1]], equal_var=False)
         return pvalue
 
-    def getGroupsProbabilitiesFromNewEntry(self, newEntry):
-        groupCounter = {self.groups[0]: 0, self.groups[1]: 1}
-        for entry in self.entries:
-            for group in self.groups:
-                if entry['Group'] == group:
-                    groupCounter[group] = groupCounter[group] + 1
-        if abs(groupCounter[self.groups[0]] - groupCounter[self.groups[1]]) >= 4:
-            if groupCounter[self.groups[0]] - groupCounter[self.groups[1]] >= 0:
+    def get_groups_probabilities_from_new_entry(self, new_entry):
+        if self.__is_group_size_difference_significant__():
+            if self.group_counter[self.groups[0]] - self.group_counter[self.groups[1]] >= 0:
                 probas = {self.groups[0]: 0, self.groups[1]: 1}
             else:
                 probas = {self.groups[0]: 1, self.groups[1]: 0}
             return probas
+        else:
+            [pvalues, products_pvalues] = self.__create_pvalues_for_all_groups__(
+                new_entry)
+            return self.__get_allocation_probability_from_pvalues__(pvalues, products_pvalues)
+
+    def __create_pvalues_for_all_groups__(self, new_entry):
         pvalues = dict()
-        productsPValues = dict()
+        products_pvalues = dict()
         for group in self.groups:
-            database = self.createCopy()
-            newEntryGroup = dict(newEntry)
-            newEntryGroup["Group"] = group
-            database.addEntryWithGroup(newEntryGroup)
-            minPvalue = 1
-            productPValue = 1
-            for field in database.fields:
-                try:
-                    pvalue = database.getPValue(field)
-                    if math.isnan(pvalue):
-                        pvalue = 1
-                    if pvalue < minPvalue:
-                        minPvalue = pvalue
-                    productPValue *= pvalue
-                except DatabaseError.CannotComputeTTestOnField:
-                    pass
+            minPvalue, productPValue = self.__get_pvalues_for_group__(
+                group, new_entry)
+
             pvalues[group] = minPvalue
-            productsPValues[group] = productPValue
+            products_pvalues[group] = productPValue
+        return pvalues, products_pvalues
+
+    def __get_pvalues_for_group__(self, group, new_entry):
+        database = self.createCopy()
+        newEntryGroup = dict(new_entry)
+        newEntryGroup["Group"] = group
+        database.addEntryWithGroup(newEntryGroup)
+        minPvalue = 1
+        productPValue = 1
+        for field in database.fields:
+            try:
+
+                pvalue = database.getPValue(field)
+                if math.isnan(pvalue):
+                    pvalue = 1
+                if pvalue < minPvalue:
+                    minPvalue = pvalue
+                productPValue *= pvalue
+            except DatabaseError.CannotComputeTTestOnField:
+                pass
+        return minPvalue, productPValue
+
+    def __get_allocation_probability_from_pvalues__(self, pvalues, products_pvalues):
         probas = dict()
-        if pvalues[self.groups[0]] == 0 and pvalues[self.groups[1]] == 0 and productsPValues[self.groups[0]] == 0 and productsPValues[self.groups[1]] == 0:
+        if pvalues[self.groups[0]] == 0 and pvalues[self.groups[1]] == 0 and products_pvalues[self.groups[0]] == 0 and products_pvalues[self.groups[1]] == 0:
             probas[self.groups[0]] = 0.5
             probas[self.groups[1]] = 0.5
         elif pvalues[self.groups[0]] == pvalues[self.groups[1]]:
-            probas[self.groups[0]] = productsPValues[self.groups[0]] / (productsPValues[self.groups[0]] +
-                                                                        productsPValues[self.groups[1]])
-            probas[self.groups[1]] = productsPValues[self.groups[1]] / (productsPValues[self.groups[0]] +
-                                                                        productsPValues[self.groups[1]])
+            probas[self.groups[0]] = products_pvalues[self.groups[0]] / (products_pvalues[self.groups[0]] +
+                                                                         products_pvalues[self.groups[1]])
+            probas[self.groups[1]] = products_pvalues[self.groups[1]] / (products_pvalues[self.groups[0]] +
+                                                                         products_pvalues[self.groups[1]])
         else:
             probas[self.groups[0]] = pvalues[self.groups[0]] / (pvalues[self.groups[0]] +
                                                                 pvalues[self.groups[1]])
@@ -237,15 +282,33 @@ class Database:
                                                                 pvalues[self.groups[1]])
         return probas
 
-    def getGroupFromNewEntry(self, newEntry):
-        probas = self.getGroupsProbabilitiesFromNewEntry(newEntry)
+    def __is_group_size_difference_significant__(self):
+        return abs(self.group_counter[self.groups[0]] - self.group_counter[self.groups[1]]) >= 4
+
+    def getGroupFromNewEntry(self, new_entry):
+        probas = self.get_groups_probabilities_from_new_entry(new_entry)
+        print("----------------------------------")
+        print("Group Probabilities Post-New Entry")
+        print("BCI: %.3f" % probas['BCI'])
+        print("Sham: %.3f" % probas['Sham'])
+        print("----------------------------------")
         proba = random.random()
+        print("Randomly Generated Probability: %.3f" % proba)
+        print("-------------------------------------")
         if proba < probas[self.groups[0]]:
+            print("New Entry placed in '" + self.groups[0] + "' Group (based on Frane algorithm)")
             return self.groups[0]
+        print("New Entry placed in '" + self.groups[1] + "' Group (based on Frane algorithm)")
         return self.groups[1]
 
     def rejectEntry(self, index):
-        self.rejectedEntries.append(index)
+        self.rejected_entries.append(index)
 
     def unrejectEntry(self, index):
-        self.rejectedEntries.remove(index)
+        self.rejected_entries.remove(index)
+
+    def setEntryAsFinished(self, index):
+        self.finished_entries.append(index)
+
+    def setEntryAsUnFinished(self, index):
+        self.finished_entries.remove(index)

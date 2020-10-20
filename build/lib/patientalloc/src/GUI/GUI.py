@@ -45,12 +45,6 @@ class GUI():
             self.currentFrame = DatabaseLoaderDisplay(self)
             self.currentFrame.display()
 
-        viewmode = self.getViewMode()
-        if viewmode is True:
-            self.viewmode = 'blind'
-        else:
-            self.viewmode = 'not blind'
-
     def isAdminMode(self):
         return self.mode == 'admin'
 
@@ -116,8 +110,3 @@ class GUI():
                                 dirName=None, fileExt=".db",
                                 fileTypes=[('Database', '*.db')],
                                 asFile=None, parent=None)
-    def getViewMode(self):
-        title = "ALLOCATION VIEWING MODE"
-        message = "Would you like to allocate patients in a blind viewing mode?"
-        response = self.app.questionBox(title, message)
-        return response

@@ -23,7 +23,6 @@ class Database:
         self.limited_values = []
         self.rejected_entries = []
         self.finished_entries = []
-        self.previously_matched_entries = []
         random.seed(datetime.now())
 
     def createCopy(self):
@@ -39,7 +38,6 @@ class Database:
         database.limited_values = self.limited_values.copy()
         database.rejected_entries = self.rejected_entries.copy()
         database.finished_entries = self.finished_entries.copy()
-        database.previously_matched_entries = self.previously_matched_entries.copy()
         database.group_counter = self.group_counter.copy()
         return database
 
@@ -64,8 +62,7 @@ class Database:
                         'fields': dict(),
                         'groups': self.groups,
                         'rejectedEntries': self.rejected_entries,
-                        'finishedEntries': self.finished_entries,
-                        'previously_matched_entries': self.previously_matched_entries}
+                        'finishedEntries': self.finished_entries}
             for field in self.fields:
                 document['fields'][field] = dict()
                 document['fields'][field]['ttest'] = self.getTtestFromField(
@@ -109,8 +106,6 @@ class Database:
                 self.rejected_entries = db_info["rejectedEntries"]
             if "finishedEntries" in db_info:
                 self.finished_entries = db_info["finishedEntries"]
-            if "previously_matched_entries" in db_info:
-                self.previously_matched_entries = db_info["previously_matched_entries"]
             self.groups = db_info['groups']
             self.order = db_info['order']
             for group in self.groups:
@@ -201,7 +196,6 @@ class Database:
         groups = ({self.groups[0]: [], self.groups[1]: []})
         pvalue = 0
         entry_number = 0
-        # print(self.entries)
         for entry in self.entries:
             if entry_number + 1 not in self.rejected_entries:
                 if self.getFieldTypeFromField(field) == "List":
@@ -210,7 +204,6 @@ class Database:
                 elif self.getFieldTypeFromField(field) == "Number":
                     groups[entry["Group"]].append(int(float(entry[field])))
             entry_number = entry_number + 1
-        # print(groups)
         if self.getFieldTypeFromField(field) == "List":
             obs = [groups[self.groups[0]].count(
                 0), groups[self.groups[0]].count(1)]
@@ -230,21 +223,20 @@ class Database:
                 probas = {self.groups[0]: 1, self.groups[1]: 0}
             return probas
         else:
-            [pvalues, products_pvalues, _] = self.__create_pvalues_for_all_groups__(
+            [pvalues, products_pvalues] = self.__create_pvalues_for_all_groups__(
                 new_entry)
             return self.__get_allocation_probability_from_pvalues__(pvalues, products_pvalues)
 
     def __create_pvalues_for_all_groups__(self, new_entry):
         pvalues = dict()
         products_pvalues = dict()
-        pval_flds_grps = dict()
         for group in self.groups:
-            minPvalue, productPValue, pval_flds = self.__get_pvalues_for_group__(
+            minPvalue, productPValue = self.__get_pvalues_for_group__(
                 group, new_entry)
+
             pvalues[group] = minPvalue
             products_pvalues[group] = productPValue
-            pval_flds_grps[group] = pval_flds
-        return pvalues, products_pvalues, pval_flds_grps
+        return pvalues, products_pvalues
 
     def __get_pvalues_for_group__(self, group, new_entry):
         database = self.createCopy()
@@ -253,12 +245,10 @@ class Database:
         database.addEntryWithGroup(newEntryGroup)
         minPvalue = 1
         productPValue = 1
-        pval_fields = dict()
         for field in database.fields:
             try:
 
                 pvalue = database.getPValue(field)
-                pval_fields[field] = pvalue
                 if math.isnan(pvalue):
                     pvalue = 1
                 if pvalue < minPvalue:
@@ -266,7 +256,7 @@ class Database:
                 productPValue *= pvalue
             except DatabaseError.CannotComputeTTestOnField:
                 pass
-        return minPvalue, productPValue, pval_fields
+        return minPvalue, productPValue
 
     def __get_allocation_probability_from_pvalues__(self, pvalues, products_pvalues):
         probas = dict()
@@ -290,18 +280,9 @@ class Database:
 
     def getGroupFromNewEntry(self, new_entry):
         probas = self.get_groups_probabilities_from_new_entry(new_entry)
-        # print("----------------------------------")
-        # print("Group Probabilities Post-New Entry")
-        # print("BCI: %.3f" % probas['BCI'])
-        # print("Sham: %.3f" % probas['Sham'])
-        # print("----------------------------------")
         proba = random.random()
-        # print("Randomly Generated Probability: %.3f" % proba)
-        # print("-------------------------------------")
         if proba < probas[self.groups[0]]:
-            # print("New Entry placed in '" + self.groups[0] + "' Group (based on Frane algorithm)")
             return self.groups[0]
-        # print("New Entry placed in '" + self.groups[1] + "' Group (based on Frane algorithm)")
         return self.groups[1]
 
     def rejectEntry(self, index):
