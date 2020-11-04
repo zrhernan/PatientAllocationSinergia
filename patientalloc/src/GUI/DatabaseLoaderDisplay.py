@@ -46,7 +46,7 @@ class DatabaseLoaderDisplay():
             if self.database is not None:
                 self.loaded = True
                 self.subject_factory = patientalloc.SubjectFactory(
-                    self.database, self.gui.settings, self.gui)
+                    self.database, self.gui.settings) #, self.gui)
                 self.gui.enableSaveMenu()
         except DatabaseError.DatabaseError as error:
             print("==============================================")
@@ -211,7 +211,21 @@ class DatabaseLoaderDisplay():
 
     def __add_subject__(self):
         subject_properties = self.__create_subject_properties_from_form_values__()
+        subject_properties = self.subject_factory.addGroup(subject_properties)
+
+        if self.gui.viewmode is not 'blind':
+            probs_by_group = self.database.get_groups_probabilities_from_new_entry(subject_properties)
+            [_, _, probs_by_field] = self.database.__create_pvalues_for_all_groups__(subject_properties)
+            self.gui.display_frane_algorithm_results(probs_by_group, probs_by_field, subject_properties)
+            subject_properties = self.gui.confirm_new_entry_group_manually(self.database.groups, subject_properties)
+
+        newentry_origgrp = subject_properties['Group']
         subject = self.subject_factory.createSubject(subject_properties)
+        subject_properties = subject.extract()
+
+        if newentry_origgrp != subject_properties['Group'] and self.gui.viewmode is not 'blind':
+            self.app.infoBox("NEW GROUP PLACEMENT", "New Entry placed in '" + subject_properties['Group'] + "' Group (based on limited matched BCI subjects)")
+
         subject.create()
         self.removeFrame()
         self.database.addEntryWithGroup(subject_properties)

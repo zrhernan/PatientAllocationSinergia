@@ -201,7 +201,6 @@ class Database:
         groups = ({self.groups[0]: [], self.groups[1]: []})
         pvalue = 0
         entry_number = 0
-        # print(self.entries)
         for entry in self.entries:
             if entry_number + 1 not in self.rejected_entries:
                 if self.getFieldTypeFromField(field) == "List":
@@ -210,7 +209,6 @@ class Database:
                 elif self.getFieldTypeFromField(field) == "Number":
                     groups[entry["Group"]].append(int(float(entry[field])))
             entry_number = entry_number + 1
-        # print(groups)
         if self.getFieldTypeFromField(field) == "List":
             obs = [groups[self.groups[0]].count(
                 0), groups[self.groups[0]].count(1)]
@@ -290,18 +288,9 @@ class Database:
 
     def getGroupFromNewEntry(self, new_entry):
         probas = self.get_groups_probabilities_from_new_entry(new_entry)
-        # print("----------------------------------")
-        # print("Group Probabilities Post-New Entry")
-        # print("BCI: %.3f" % probas['BCI'])
-        # print("Sham: %.3f" % probas['Sham'])
-        # print("----------------------------------")
         proba = random.random()
-        # print("Randomly Generated Probability: %.3f" % proba)
-        # print("-------------------------------------")
         if proba < probas[self.groups[0]]:
-            # print("New Entry placed in '" + self.groups[0] + "' Group (based on Frane algorithm)")
             return self.groups[0]
-        # print("New Entry placed in '" + self.groups[1] + "' Group (based on Frane algorithm)")
         return self.groups[1]
 
     def rejectEntry(self, index):

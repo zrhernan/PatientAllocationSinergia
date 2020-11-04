@@ -13,6 +13,9 @@ class BCISubject(Subject):
         self.savingProperties = savingProperties
         self.matching_subject_id = matching_subject_id
 
+    def extract(self):
+        return self.properties
+
     def create(self):
         self.create_data_folder()
         self.update_xml()
@@ -52,7 +55,7 @@ class BCISubject(Subject):
         resourcesPath = self.__get_subject_path__() + "/resources"
         if not os.path.isdir(resourcesPath):
             os.makedirs(resourcesPath)
-        files = {"authorized": "AuthorizedMovements.json", "flexion": "flexion.json", "extension": "extension.json",
+        files = {"authorized": "AuthorizedMovements.json", "flexion": "flexion.json", "reaching": "extension.json",
                  "lowstimSingle": "lowStimSingle.json", "lowstimDouble": "lowStimDouble.json", "reset": "reset.json"}
         for file in files:
             pathToFile = resourcesPath + "/" + files[file]

@@ -121,3 +121,53 @@ class GUI():
         message = "Would you like to allocate patients in a blind viewing mode?"
         response = self.app.questionBox(title, message)
         return response
+
+    def display_frane_algorithm_results(self, probs_by_group, probs_by_field, properties):
+        group_names = list(probs_by_group.keys())
+        probs_groups = ["%.3f" % probs_by_group[grp] for grp in group_names]
+
+        field_names = list(probs_by_field[group_names[0]].keys())
+        probs_fields_grp1 = ["%.3f" % probs_by_field[group_names[0]][fld] for fld in field_names]
+        probs_fields_grp2 = ["%.3f" % probs_by_field[group_names[1]][fld] for fld in field_names]
+        probs_fields_message = [field_names[i].upper() + "\t|" + probs_fields_grp1[i] + "\t" + probs_fields_grp2[i] + "\n" for i in range(0,len(field_names))]
+        probs_field_message_concat = ''.join(probs_fields_message)
+
+        title = "FRANE ALGORITHM RESULTS"
+        message = "Group Probability Summary\n" \
+                  "===================\n" \
+                  "If added to...\n" \
+                  + group_names[0].upper() + "\t" + group_names[1].upper() + "\n" \
+                  + probs_groups[0] + "\t" + probs_groups[1] + "\n"\
+                  "\n" \
+                  "Field Probability Summary\n" \
+                  "===================\n" \
+                  "\t|If added to...\n" \
+                  "FIELD\t|" + group_names[0].upper() + "\t" + group_names[1].upper() + "\n" \
+                  "----------------------------------\n" \
+                  + probs_field_message_concat + "\n" \
+                  "New Entry in '" + properties['Group'].upper() + "' Group"
+        self.app.infoBox(title, message)
+
+    def confirm_new_entry_group_manually(self, groups, properties):
+        curr_group = properties['Group']
+        opposite_group = [i for i in groups if curr_group not in i]
+        opposite_group = opposite_group[0]
+        message = "New entry is in '" + curr_group.upper() \
+                + "' group. Do you want to change this?\n" \
+                "-----------------------------------------\n" \
+                "WARNING: Selecting 'Yes' will automatically place the new subject entry into " \
+                "'" + opposite_group.upper() + "' group. If you don't want to make any changes, " \
+                "please select 'No' or close this window."
+        title = "NEW ENTRY GROUP CONFIRMATION"
+        response = self.app.questionBox(title, message)
+        if response:
+            new_group = [i for i in groups if curr_group not in i]
+            curr_group = new_group[0]
+            print("New Entry manually placed into '" + curr_group.upper() + "' group.")
+            self.app.infoBox("NEW GROUP PLACEMENT",
+                             "New Entry manually placed into '" + curr_group.upper() + "' group")
+        else:
+            print("New Entry remains in '" + curr_group.upper() + "' group")
+            self.app.infoBox("NEW GROUP PLACEMENT", "New Entry remains in '" + curr_group.upper() + "' group")
+        properties['Group'] = curr_group
+        return properties
