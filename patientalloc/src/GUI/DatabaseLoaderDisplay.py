@@ -46,7 +46,7 @@ class DatabaseLoaderDisplay():
             if self.database is not None:
                 self.loaded = True
                 self.subject_factory = patientalloc.SubjectFactory(
-                    self.database, self.gui.settings) #, self.gui)
+                    self.database, self.gui.settings)
                 self.gui.enableSaveMenu()
         except DatabaseError.DatabaseError as error:
             print("==============================================")

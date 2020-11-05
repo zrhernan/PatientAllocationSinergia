@@ -12,16 +12,16 @@ import os
 
 class GUISettings():
     def __init__(self):
-        xml_file_path = str(Path.home()) + "/StrokeMI/protocolxmls/"
+        xml_file_path = str(Path.home()) + "/.cnbitk/cnbimi/xml/"
         xml_file_name = "mi_stroke_prot.xml"
         self.settingsFile = str(Path.home()) + '/.patientalloc/settings.yml'
-        self.fileName = "sinergia_mock.db"
+        self.fileName = "sinergia.db"
         self.folder = str(Path.home()) + '/.patientalloc/SinergiaPatients'
         self.server = ""
         self.saveMode = "local"
         self.subjectCreationType = "BCI"
         self.savingProperties = {"folder": str(Path.home()) + "/data/", "xml_file_path": xml_file_path,
-                                 "xml_file_name": xml_file_name, "resources": str(Path.home()) + "/StrokeMI/fesjsons/"}
+                                 "xml_file_name": xml_file_name, "resources": str(Path.home()) + "/dev/fescontrol/resources/"}
 
     def createSettingsFile(self):
         if not os.path.exists(os.path.dirname(self.settingsFile)):
