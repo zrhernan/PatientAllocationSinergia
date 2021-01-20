@@ -12,3 +12,4 @@ patient_alloc.egg-info
 venv
 .eggs
 dist
+build
